@@ -1,0 +1,17 @@
+# Build
+/public/build
+
+# Debug
+yarn.lock
+
+# Dependencies
+/node_modules
+
+# Misc
+/.idea
+/resources
+/results
+
+# README
+README.md
+glasto.log

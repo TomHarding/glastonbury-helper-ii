@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 
-const winston = require("winston")
-const argv = require("yargs").argv
-const readline = require("readline")
 const fs = require("fs")
-const util = require("util")
 const puppeteer = require("puppeteer-extra")
 const pluginStealth = require("puppeteer-extra-plugin-stealth")
+const readline = require("readline")
+const util = require("util")
+const winston = require("winston")
+const argv = require("yargs").argv
+
 puppeteer.use(pluginStealth())
 const readFile = util.promisify(fs.readFile)
 process.setMaxListeners(Infinity)
 
-//TODO: Seperate logger into own file
+// TODO: Separate logger into own file
 const logger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp(),
@@ -46,8 +47,143 @@ Other:
     - It would be nice to scale this so it's not just maxing out one device. How though? Possibly containerize and give each container its own VPN
 */
 
-class Tabs {
-  constructor(url, rateLimitPerMinute, registrationPageInnerText) {
+class VPN {
+  ip: string
+  port: number
+  username: string
+  password: string
+
+  constructor(ip: string, port: number, username: string, password: string) {
+    this.ip = ip
+    this.port = port
+    this.username = username
+    this.password = password
+  }
+}
+
+class Tab {
+  url: string
+  proxy: VPN
+  browser: any
+  page: any
+  innerHtmlText: string
+  similarityScore: number
+  ready: boolean
+  startTime: number
+
+  constructor(url: string, proxy: VPN = null) {
+    this.url = url
+    this.proxy = proxy
+    this.browser = null
+    this.page = null
+    this.innerHtmlText = null
+    this.similarityScore = -1
+    this.ready = false
+    this.startTime = null
+  }
+
+  getReady() {
+    return this.ready
+  }
+
+  setReady(ready: boolean) {
+    this.ready = ready
+  }
+  getSimilarityScore() {
+    return this.similarityScore
+  }
+  getStartTime() {
+    return this.startTime
+  }
+  setSimilarityScore(similarityScore: number) {
+    this.similarityScore = similarityScore
+  }
+
+  async bringToFront() {
+    await this.page.bringToFront()
+  }
+
+  async initialiseTab() {
+    logger.info("Spawning new tab")
+
+    let args = [
+      "--disable-gpu",
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+    ]
+
+    if (this.proxy) {
+      logger.info(`Using proxy: ${this.proxy.ip}:${this.proxy.port}`)
+      args.push(`--proxy-server=${this.proxy.ip}:${this.proxy.port}`)
+    }
+
+    this.browser = await puppeteer.launch({
+      headless: false,
+      args: args,
+    })
+
+    const pages = await this.browser.pages()
+
+    this.page = pages.pop()
+    this.ready = true
+  }
+
+  async close() {
+    await this.browser.close()
+    return await this.page.close()
+  }
+
+  async loadPage() {
+    this.startTime = Date.now()
+    this.setReady(false)
+
+    logger.info("Navigating to page")
+
+    if (this.proxy) {
+      await this.page.authenticate({
+        username: this.proxy.username,
+        password: this.proxy.password,
+      })
+    }
+
+    return await this.page.goto(this.url, {
+      waitUntil: "networkidle2",
+      timeout: 30000,
+    })
+  }
+
+  async getInnerHtmlTextOfAllElements() {
+    let innerHtmlTextOfAllElements = ""
+    const options = await this.page.$$("body *")
+
+    for (const option of options) {
+      const label = await this.page.evaluate((el) => el.innerText, option)
+
+      if (label !== undefined && label.length > 0) {
+        innerHtmlTextOfAllElements =
+          innerHtmlTextOfAllElements + label.trim() + " "
+      }
+    }
+
+    return innerHtmlTextOfAllElements
+  }
+}
+
+class Puppets {
+  tabs: Tab[]
+  url: string
+  refreshRateInMs: number
+  registrationPageInnerText: string
+  paused: boolean
+  similarityThreshold: number
+  lastHighScorer: number
+
+  constructor(
+    url: string,
+    rateLimitPerMinute: number,
+    registrationPageInnerText: string
+  ) {
     this.tabs = []
     this.url = url
     this.refreshRateInMs = (60 / rateLimitPerMinute) * 1000
@@ -57,7 +193,7 @@ class Tabs {
     this.lastHighScorer = -1
   }
 
-  setPaused(paused) {
+  setPaused(paused: boolean) {
     if (paused) {
       logger.info(
         "Pausing operation. Tabs wills finish their current page load."
@@ -65,6 +201,7 @@ class Tabs {
     } else {
       logger.info("Resuming operation.")
     }
+
     this.paused = paused
   }
 
@@ -72,19 +209,19 @@ class Tabs {
     return this.paused
   }
 
-  async initializeTabs(tabQuantity) {
+  async initializeTabs(tabQuantity: number) {
     this.tabs = []
+
     for (let i = 0; i < tabQuantity; i++) {
-      let tab = new Tab(this.url)
+      let tab = i === 0 ? new Tab(this.url) : new Tab(this.url, proxies[i - 1])
       await tab.initialiseTab()
       this.tabs.push(tab)
     }
   }
 
-  async restartTab(tabIndex) {
+  async restartTab(tabIndex: number) {
     await this.tabs[tabIndex].close()
-    let tab = new Tab(this.url)
-    this.tabs[tabIndex] = tab
+    this.tabs[tabIndex] = new Tab(this.url)
     await this.tabs[tabIndex].initialiseTab()
   }
 
@@ -94,7 +231,7 @@ class Tabs {
     }
   }
 
-  calculateSimilarity(retrievedText, desiredText) {
+  calculateSimilarity(retrievedText: string, desiredText: string) {
     const retrievedTextTokens = retrievedText
       .replace(/(\r\n|\n|\r)/gm, "")
       .toLowerCase()
@@ -112,48 +249,52 @@ class Tabs {
       }
     }
 
-    const score = (countOfMatchingWords / desiredTextTokens.length) * 100
-    return score
+    return (countOfMatchingWords / desiredTextTokens.length) * 100
   }
 
   async getHighestScoringTabIndex() {
     // Get the tab with highest score. Return the first found if multiple exist with same score
     let highestScorer = null
+
     for (let i = 0; i < this.tabs.length; i++) {
       if (highestScorer == null) {
         highestScorer = i
         continue
       }
+
       if (
-        (await this.tabs[i].getSimilarityScore()) >
-        (await this.tabs[highestScorer].getSimilarityScore())
+        this.tabs[i].getSimilarityScore() >
+        this.tabs[highestScorer].getSimilarityScore()
       ) {
         highestScorer = i
       }
     }
+
     return highestScorer
   }
 
-  // TODO: tidy method
+  // TODO: Tidy method
   async loadPagesAtRate() {
     while (true) {
       for (let i = 0; i < this.tabs.length; i++) {
         while (this.paused == true) {
           await this.sleep(10)
         }
-        //Don't reload the page we think is most similar, unless it's score is 0 (which it starts off with)
+
+        // Don't reload the page we think is most similar, unless it's score is 0 (which it starts off with)
         if (
           i != (await this.getHighestScoringTabIndex()) ||
-          (await this.tabs[i].getSimilarityScore()) == -1
+          this.tabs[i].getSimilarityScore() == -1
         ) {
-          if ((await this.tabs[i].getReady()) == true) {
+          if (this.tabs[i].getReady() == true) {
             logger.info({
               tab: i,
               message: `Loading page`,
             })
+
             this.tabs[i]
               .loadPage()
-              .then(async (page) => {
+              .then(async () => {
                 logger.info({
                   tab: i,
                   message: `Loaded page in ${Date.now() - this.tabs[i].getStartTime()}ms`,
@@ -161,65 +302,49 @@ class Tabs {
 
                 await this.tabs[i]
                   .getInnerHtmlTextOfAllElements()
-                  .then(async (pageInnerHtmlText) => {
-                    const similarityScore = await this.calculateSimilarity(
+                  .then(async (pageInnerHtmlText: string) => {
+                    const similarityScore = this.calculateSimilarity(
                       pageInnerHtmlText,
                       this.registrationPageInnerText
                     )
-                    await this.tabs[i].setSimilarityScore(similarityScore)
+
+                    this.tabs[i].setSimilarityScore(similarityScore)
+
                     logger.info({
                       tab: i,
                       message: `${similarityScore.toFixed(2)}% similarity found`,
                     })
 
-                    //Hard coded this pause as results from the coach tickets run showed the page we want has a similarity score of 91
+                    // Hard coded this pause as results from the coach tickets run showed the page we want has a similarity score of 91
                     if (similarityScore > this.similarityThreshold) {
                       this.paused = true
                       logger.info({
                         tab: i,
                         message: `Paused operation as page with > ${this.similarityThreshold}% found`,
                       })
-
-                      const successfulBrowser = await this.tabs[i].getBrowser()
-                      const successfulBrowserPages =
-                        await successfulBrowser.pages()
-                      const successfulBrowserPage = successfulBrowserPages.pop()
-                      const successfulBrowserCookies =
-                        await successfulBrowserPage.cookies()
-                      const successfulBrowserPageUrl =
-                        await successfulBrowserPage.url()
-                      const newBrowser = await puppeteer.launch({
-                        headless: false,
-                      })
-
-                      const pages = await newBrowser.pages()
-                      const page = pages.pop()
-                      await page.setCookie(successfulBrowserCookies.pop())
-                      await page.goto(successfulBrowserPageUrl, {
-                        waitUntil: "networkidle2",
-                        timeout: 30000,
-                      })
-
-                      //create new browser
                     }
+
                     const highestScoringTab =
                       await this.getHighestScoringTabIndex()
+
                     if (highestScoringTab != this.lastHighScorer) {
                       this.lastHighScorer = highestScoringTab
                       await this.tabs[highestScoringTab].bringToFront()
                     }
-                    await this.tabs[i].setReady(true)
+
+                    this.tabs[i].setReady(true)
                   })
               })
               .catch(async (error) => {
                 logger.error({
                   tab: i,
-                  message: error.toString(),
+                  message: error,
                 })
-                await this.tabs[i].setReady(true)
+
+                this.tabs[i].setReady(true)
               })
 
-            //Wait until enough time has passed before loading next tab so we don't break the rate limit
+            // Wait until enough time has passed before loading next tab so we don't break the rate limit
             const finishTime = Date.now()
             if (
               finishTime - this.tabs[i].getStartTime() <
@@ -239,101 +364,22 @@ class Tabs {
     }
   }
 
-  sleep(ms) {
+  sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms))
-  }
-}
-
-class Tab {
-  constructor(url) {
-    this.url = url
-    this.page = null
-    this.browser = null
-    this.innerHtmlText = null
-    this.similarityScore = -1
-    this.ready = false
-    this.startTime = null
-  }
-
-  async getBrowser() {
-    return await this.browser
-  }
-  getReady() {
-    return this.ready
-  }
-
-  setReady(ready) {
-    this.ready = ready
-  }
-  getSimilarityScore() {
-    return this.similarityScore
-  }
-  getStartTime() {
-    return this.startTime
-  }
-  setSimilarityScore(similarityScore) {
-    this.similarityScore = similarityScore
-  }
-
-  async bringToFront() {
-    this.page.bringToFront()
-  }
-
-  async initialiseTab() {
-    logger.info("Spawning new tab")
-    this.browser = await puppeteer.launch({
-      headless: true,
-    })
-    const pages = await this.browser.pages()
-
-    this.page = pages.pop()
-    this.ready = true
-  }
-
-  async close() {
-    await this.browser.close()
-    return await this.page.close()
-  }
-
-  async loadPage() {
-    this.startTime = Date.now()
-    await this.setReady(false)
-    return await this.page.goto(this.url, {
-      waitUntil: "networkidle2",
-      timeout: 30000,
-    })
-  }
-
-  async getInnerHtmlTextOfAllElements() {
-    let innerHtmlTextOfAllElements = ""
-    const options = await this.page.$$("body *")
-    for (const option of options) {
-      const label = await this.page.evaluate((el) => el.innerText, option)
-      if (label != undefined && label.length > 0) {
-        innerHtmlTextOfAllElements =
-          innerHtmlTextOfAllElements + label.trim() + " "
-      }
-    }
-    return innerHtmlTextOfAllElements
-  }
-
-  async evaluateSelector(selector) {
-    const result = await this.page.evaluate(selector)
-    return result || ""
   }
 }
 
 function parseArgs() {
   if (!(argv["site"] && argv["rate-limit"] && argv["max-tabs"])) {
-    log.info(
-      `Usage:\nnode main.js --site=\"localhost:3000\" --rate-limit=60 --max-tabs=10`
-    )
+    // log.info(
+    //   `Usage:\nnode main.js --site=\"localhost:3000\" --rate-limit=60 --max-tabs=10`
+    // )
     process.exit(0)
   }
   return argv
 }
 
-async function readFileAsString(filePath) {
+async function readFileAsString(filePath: string) {
   return await readFile(filePath)
 }
 
@@ -353,7 +399,7 @@ async function run() {
   parseArgs()
   const registrationPageInnerText = await getRegistrationPageInnerText()
 
-  const tabs = new Tabs(
+  const tabs = new Puppets(
     argv["site"],
     argv["rate-limit"],
     registrationPageInnerText
@@ -365,7 +411,7 @@ async function run() {
     if (key.ctrl && key.name === "c") {
       tabs.closeTabs()
       process.exit(0)
-    } else if (key.name == "enter") {
+    } else if (key.name === "enter") {
       tabs.setPaused(!tabs.getPaused())
     }
   })
@@ -373,4 +419,9 @@ async function run() {
   await tabs.initializeTabs(argv["max-tabs"])
   await tabs.loadPagesAtRate()
 }
+
+const proxies = [
+  // new VPN("38.154.227.167", 5868, "molnkqai", "20rys3gn1bti"),
+]
+
 run()

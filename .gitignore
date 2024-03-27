@@ -25,3 +25,7 @@ node_modules/
 
 # RubyMine
 .idea/
+
+# Misc
+glasto.log
+
