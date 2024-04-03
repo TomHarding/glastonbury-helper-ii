@@ -1,4 +1,4 @@
-class GlastoProxy {
+export class BrowserProxy {
   ip: string
   port: number
   username: string
@@ -11,5 +11,3 @@ class GlastoProxy {
     this.password = password
   }
 }
-
-module.exports = GlastoProxy

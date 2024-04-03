@@ -1,22 +1,23 @@
-const GlastoProxy = require("./GlastoProxy")
 const puppeteer = require("puppeteer-extra")
 const pluginStealth = require("puppeteer-extra-plugin-stealth")
-const logger = require("./log")
+
+import { BrowserProxy } from "./BrowserProxy"
+import { Logger } from "./Logger"
 
 puppeteer.use(pluginStealth())
 
-class Tab {
+export class Tab {
   url: string
-  proxy: typeof GlastoProxy | null
+  browserProxy: BrowserProxy | null
   browser: any
   page: any
   similarityScore: number
   ready: boolean
   startTime: number
 
-  constructor(url: string, proxy: typeof GlastoProxy = null) {
+  constructor(url: string, browserProxy: BrowserProxy = null) {
     this.url = url
-    this.proxy = proxy
+    this.browserProxy = browserProxy
     this.browser = null
     this.page = null
     this.similarityScore = -1
@@ -49,7 +50,7 @@ class Tab {
   }
 
   async initialiseTab() {
-    logger.info("Spawning new tab")
+    Logger.info("Spawning new tab")
 
     const args = [
       "--disable-gpu",
@@ -58,9 +59,13 @@ class Tab {
       "--disable-dev-shm-usage",
     ]
 
-    if (this.proxy) {
-      logger.info(`Using proxy: ${this.proxy.ip}:${this.proxy.port}`)
-      args.push(`--proxy-server=${this.proxy.ip}:${this.proxy.port}`)
+    if (this.browserProxy) {
+      Logger.info(
+        `Using proxy: ${this.browserProxy.ip}:${this.browserProxy.port}`
+      )
+      args.push(
+        `--proxy-server=${this.browserProxy.ip}:${this.browserProxy.port}`
+      )
     }
 
     this.browser = await puppeteer.launch({
@@ -83,12 +88,12 @@ class Tab {
     this.startTime = Date.now()
     this.setReady(false)
 
-    logger.info("Navigating to page")
+    Logger.info("Navigating to page")
 
-    if (this.proxy) {
+    if (this.browserProxy) {
       await this.page.authenticate({
-        username: this.proxy.username,
-        password: this.proxy.password,
+        username: this.browserProxy.username,
+        password: this.browserProxy.password,
       })
     }
 
@@ -113,5 +118,3 @@ class Tab {
     return innerHtmlTextOfAllElements
   }
 }
-
-module.exports = Tab

@@ -1,5 +1,6 @@
 # Build
 /public/build
+*.js
 
 # Debug
 yarn.lock

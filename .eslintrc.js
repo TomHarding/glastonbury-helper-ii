@@ -15,6 +15,7 @@ module.exports = {
   },
   plugins: ["@typescript-eslint", "unused-imports"],
   rules: {
+    "@typescript-eslint/no-var-requires": "off",
     "node/no-missing-import": "off",
     "no-console": "error",
     "no-var": "error",

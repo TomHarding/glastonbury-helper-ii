@@ -1,10 +1,10 @@
-const GlastoProxy = require("./GlastoProxy")
-const logger = require("./log")
-const Tab = require("./tab")
+import { BrowserProxy } from "./BrowserProxy"
+import { Logger } from "./Logger"
+import { Tab } from "./Tab"
 
-class Puppets {
+export class Puppets {
   tabs: Tab[]
-  proxies: (typeof GlastoProxy)[]
+  browserProxies: BrowserProxy[]
   url: string
   refreshRateInMs: number
   registrationPageInnerText: string
@@ -16,7 +16,7 @@ class Puppets {
     url: string,
     rateLimitPerMinute: number,
     registrationPageInnerText: string,
-    proxies: (typeof GlastoProxy)[]
+    browserProxies: BrowserProxy[]
   ) {
     this.tabs = []
     this.url = url
@@ -25,16 +25,16 @@ class Puppets {
     this.paused = false
     this.similarityThreshold = 80
     this.lastHighScorer = -1
-    this.proxies = proxies
+    this.browserProxies = browserProxies
   }
 
   setPaused(paused: boolean) {
     if (paused) {
-      logger.info(
+      Logger.info(
         "Pausing operation. Tabs wills finish their current page load."
       )
     } else {
-      logger.info("Resuming operation.")
+      Logger.info("Resuming operation.")
     }
 
     this.paused = paused
@@ -49,7 +49,9 @@ class Puppets {
 
     for (let i = 0; i < tabQuantity; i++) {
       const tab =
-        i === 0 ? new Tab(this.url) : new Tab(this.url, proxies[i - 1])
+        i === 0
+          ? new Tab(this.url)
+          : new Tab(this.url, this.browserProxies[i - 1])
 
       await tab.initialiseTab()
       this.tabs.push(tab)
@@ -79,7 +81,6 @@ class Puppets {
       .split(" ")
     let countOfMatchingWords = 0
 
-    // How could this be improved?
     for (let i = 0; i < desiredTextTokens.length; i++) {
       if (retrievedTextTokens.includes(desiredTextTokens[i])) {
         countOfMatchingWords++
@@ -90,7 +91,6 @@ class Puppets {
   }
 
   async getHighestScoringTabIndex() {
-    // Get the tab with highest score. Return the first found if multiple exist with same score
     let highestScorer: number = 0
 
     for (let i = 0; i < this.tabs.length; i++) {
@@ -110,7 +110,6 @@ class Puppets {
     return highestScorer
   }
 
-  // TODO: Tidy method
   async loadPagesAtRate() {
     while (true) {
       for (let i = 0; i < this.tabs.length; i++) {
@@ -118,13 +117,12 @@ class Puppets {
           await this.sleep(10)
         }
 
-        // Don't reload the page we think is most similar, unless it's score is 0 (which it starts off with)
         if (
           i != (await this.getHighestScoringTabIndex()) ||
           this.tabs[i].getSimilarityScore() === -1
         ) {
           if (this.tabs[i].getReady() === true) {
-            logger.info({
+            Logger.info({
               tab: i,
               message: `Loading page`,
             })
@@ -132,7 +130,7 @@ class Puppets {
             this.tabs[i]
               .loadPage()
               .then(async () => {
-                logger.info({
+                Logger.info({
                   tab: i,
                   message: `Loaded page in ${Date.now() - this.tabs[i].getStartTime()}ms`,
                 })
@@ -147,15 +145,15 @@ class Puppets {
 
                     this.tabs[i].setSimilarityScore(similarityScore)
 
-                    logger.info({
+                    Logger.info({
                       tab: i,
                       message: `${similarityScore.toFixed(2)}% similarity found`,
                     })
 
-                    // Hard coded this pause as results from the coach tickets run showed the page we want has a similarity score of 91
                     if (similarityScore > this.similarityThreshold) {
                       this.paused = true
-                      logger.info({
+
+                      Logger.info({
                         tab: i,
                         message: `Paused operation as page with > ${this.similarityThreshold}% found`,
                       })
@@ -173,7 +171,7 @@ class Puppets {
                   })
               })
               .catch(async (error) => {
-                logger.error({
+                Logger.error({
                   tab: i,
                   message: error,
                 })
@@ -181,7 +179,6 @@ class Puppets {
                 this.tabs[i].setReady(true)
               })
 
-            // Wait until enough time has passed before loading next tab so we don't break the rate limit
             const finishTime = Date.now()
             if (
               finishTime - this.tabs[i].getStartTime() <
@@ -193,7 +190,6 @@ class Puppets {
               )
             }
           } else {
-            // I've added a sleep here as when there are no pages ready it will freeze up
             await this.sleep(10)
           }
         }
@@ -205,5 +201,3 @@ class Puppets {
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
 }
-
-module.exports = Puppets

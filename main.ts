@@ -4,20 +4,21 @@ const fs = require("fs")
 const readline = require("readline")
 const util = require("util")
 const argv = require("yargs").argv
-const GlastoProxy = require("./GlastoProxy")
-const logger = require("./log")
-const Puppets = require("./Puppets")
+
+import { BrowserProxy } from "./BrowserProxy"
+import { Logger } from "./Logger"
+import { Puppets } from "./Puppets"
 
 const readFile = util.promisify(fs.readFile)
 process.setMaxListeners(Infinity)
 
 const proxies = [
-  new GlastoProxy("38.154.227.167", 5868, "molnkqai", "20rys3gn1bti"),
+  new BrowserProxy("38.154.227.167", 5868, "molnkqai", "20rys3gn1bti"),
 ]
 
 const parseArgs = () => {
   if (!argv.site || !argv["rate-limit"] || !argv["max-tabs"]) {
-    logger.info(
+    Logger.info(
       'Usage:\nnode main.js --site="localhost:3000" --rate-limit=60 --max-tabs=10'
     )
     process.exit(0)
@@ -25,12 +26,11 @@ const parseArgs = () => {
   return argv
 }
 
-const readFileAsString = async (filePath) => {
+const readFileAsString = async (filePath: string) => {
   try {
-    const data = await readFile(filePath, "utf8")
-    return data
+    return await readFile(filePath, "utf8")
   } catch (error) {
-    logger.error(`Error reading file: ${error.message}`)
+    Logger.error(`Error reading file: ${error.message}`)
     throw error
   }
 }
@@ -43,15 +43,16 @@ const getRegistrationPageInnerText = async () => {
   }
 }
 
-const setupKeyPressHandler = (tabs) => {
+const setupKeyPressHandler = (tabs: Puppets) => {
   readline.emitKeypressEvents(process.stdin)
+
   process.stdin.on("keypress", (str, key) => {
     if (key.ctrl && key.name === "c") {
       tabs
         .closeTabs()
         .then(() => process.exit(0))
         .catch((error) => {
-          logger.error(`Error closing tabs: ${error.message}`)
+          Logger.error(`Error closing tabs: ${error.message}`)
           process.exit(1)
         })
     } else if (key.name === "enter") {

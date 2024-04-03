@@ -1,6 +1,6 @@
 const winston = require("winston")
 
-const logger = winston.createLogger({
+export const Logger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.json(),
@@ -18,5 +18,3 @@ const logger = winston.createLogger({
     new winston.transports.File({ filename: "glasto.log" }),
   ],
 })
-
-module.exports = logger
