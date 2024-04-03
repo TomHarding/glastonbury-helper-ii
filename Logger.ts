@@ -1,5 +1,7 @@
 const winston = require("winston")
 
+const LOG_FILENAME = "glasto.log"
+
 export const Logger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp(),
@@ -15,6 +17,6 @@ export const Logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    new winston.transports.File({ filename: "glasto.log" }),
+    new winston.transports.File({ filename: LOG_FILENAME }),
   ],
 })

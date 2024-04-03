@@ -1,16 +1,17 @@
-const puppeteer = require("puppeteer-extra")
+const puppeteer = require("puppeteer")
+const puppeteerExtra = require("puppeteer-extra")
 const pluginStealth = require("puppeteer-extra-plugin-stealth")
 
 import { BrowserProxy } from "./BrowserProxy"
 import { Logger } from "./Logger"
 
-puppeteer.use(pluginStealth())
+puppeteerExtra.use(pluginStealth())
 
 export class Tab {
   url: string
   browserProxy: BrowserProxy | null
-  browser: any
-  page: any
+  browser: typeof puppeteer.Browser
+  page: typeof puppeteer.Page
   similarityScore: number
   ready: boolean
   startTime: number
@@ -68,7 +69,7 @@ export class Tab {
       )
     }
 
-    this.browser = await puppeteer.launch({
+    this.browser = await puppeteerExtra.launch({
       headless: false,
       args: args,
     })
