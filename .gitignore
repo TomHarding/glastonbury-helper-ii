@@ -5,11 +5,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # Complied JS
-.BrowserProxy.js
-.Logger.js
-.main.js
-.Puppets.js
-.Tab.js
+/BrowserProxy.js
+/Logger.js
+/main.js
+/Puppets.js
+/Tab.js
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
@@ -34,4 +34,3 @@ node_modules/
 
 # Misc
 glasto.log
-
