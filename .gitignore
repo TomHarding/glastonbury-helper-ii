@@ -8,6 +8,7 @@ yarn-error.log*
 /BrowserProxy.js
 /Logger.js
 /main.js
+/ProxyConfig.js
 /Puppets.js
 /Tab.js
 

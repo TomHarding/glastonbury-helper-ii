@@ -1,5 +1,6 @@
 import { BrowserProxy } from "./BrowserProxy"
 import { Logger } from "./Logger"
+import { ProxyConfig } from "./ProxyConfig"
 import { Tab } from "./Tab"
 
 export class Puppets {
@@ -15,8 +16,7 @@ export class Puppets {
   constructor(
     url: string,
     rateLimitPerMinute: number,
-    registrationPageInnerText: string,
-    browserProxies: BrowserProxy[]
+    registrationPageInnerText: string
   ) {
     this.tabs = []
     this.url = url
@@ -25,7 +25,7 @@ export class Puppets {
     this.paused = false
     this.similarityThreshold = 80
     this.lastHighScorer = -1
-    this.browserProxies = browserProxies
+    this.browserProxies = ProxyConfig()
   }
 
   setPaused(paused: boolean) {

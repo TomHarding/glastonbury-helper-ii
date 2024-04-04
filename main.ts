@@ -5,16 +5,11 @@ const readline = require("readline")
 const util = require("util")
 const argv = require("yargs").argv
 
-import { BrowserProxy } from "./BrowserProxy"
 import { Logger } from "./Logger"
 import { Puppets } from "./Puppets"
 
 const readFile = util.promisify(fs.readFile)
 process.setMaxListeners(Infinity)
-
-const proxies = [
-  new BrowserProxy("38.154.227.167", 5868, "molnkqai", "20rys3gn1bti"),
-]
 
 const parseArgs = () => {
   if (!argv.site || !argv["rate-limit"] || !argv["max-tabs"]) {
@@ -67,8 +62,7 @@ const run = async () => {
   const tabs = new Puppets(
     argv.site,
     argv["rate-limit"],
-    registrationPageInnerText,
-    proxies
+    registrationPageInnerText
   )
 
   setupKeyPressHandler(tabs)
