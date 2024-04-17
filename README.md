@@ -1,8 +1,8 @@
 # Glastonbury Ticket Helper
 
-This a fork of [@JackOHara's Glastonbury Ticket Helper](https://github.com/JackOHara/glasto-helper). I have refactored the code to use TypeScript and added the ability to use VPNs with the Puppeteer browser.
+This a fork of [@JackOHara's Glastonbury Ticket Helper](https://github.com/JackOHara/glasto-helper). I have refactored the code to use TypeScript and added the ability to use VPNs with Puppeteer.
 
-You can add your own VPNs to the `ProxyConfig` function. By default it will open one browser without applying a proxy, and then subsequent browsers will use a proxy in the order you've listed them.
+You can enable proxies by using the `--enable-proxies` command and adding your VPNs to the `ProxyConfig` function. By default it will open one browser without applying a proxy, and then subsequent browsers will use a proxy in the order you've listed them.
 
 Formatting, linting and type checking is done with Prettier, ESLint and TSC respectively. These can ran with the following commands:
 
@@ -38,7 +38,7 @@ You can pause by pressing the enter key on the command line. It should automatic
 
 `--max-tabs` : The number of tabs to use. The more the better. A tab will reload after the iteration of loading tabs has looped back around to it. So more tabs means more time for a page to load. 
 
-`--disable-images` : Disables image loading on all the tabs - should speed up loading.
+`--disable-images` : Disables image loading on all the tabs - _should_ speed up page loading.
 
 `--enable-proxies` : Enables proxies to be run against all but the first tab.
 
