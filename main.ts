@@ -61,6 +61,8 @@ const run = async () => {
   const registrationPageInnerText = await getRegistrationPageInnerText()
   const tabs = new Puppets(
     argv.site,
+    argv["enable-proxies"],
+    argv["disable-images"],
     argv["rate-limit"],
     registrationPageInnerText
   )

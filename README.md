@@ -38,6 +38,10 @@ You can pause by pressing the enter key on the command line. It should automatic
 
 `--max-tabs` : The number of tabs to use. The more the better. A tab will reload after the iteration of loading tabs has looped back around to it. So more tabs means more time for a page to load. 
 
+`--disable-images` : Disables image loading on all the tabs - should speed up loading.
+
+`--enable-proxies` : Enables proxies to be run against all but the first tab.
+
 `--test` : Will use `resources/test.txt` for comparison. For use with test site. 
 
 

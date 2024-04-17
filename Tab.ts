@@ -9,6 +9,7 @@ puppeteerExtra.use(pluginStealth())
 
 export class Tab {
   url: string
+  disableImages: boolean
   browserProxy: BrowserProxy | null
   browser: typeof puppeteer.Browser
   page: typeof puppeteer.Page
@@ -16,8 +17,13 @@ export class Tab {
   ready: boolean
   startTime: number
 
-  constructor(url: string, browserProxy: BrowserProxy = null) {
+  constructor(
+    url: string,
+    disableImages: boolean,
+    browserProxy: BrowserProxy = null
+  ) {
     this.url = url
+    this.disableImages = disableImages
     this.browserProxy = browserProxy
     this.browser = null
     this.page = null
@@ -95,6 +101,22 @@ export class Tab {
       await this.page.authenticate({
         username: this.browserProxy.username,
         password: this.browserProxy.password,
+      })
+    }
+
+    if (this.disableImages) {
+      await this.page.setRequestInterception(true)
+
+      this.page.on("request", (req) => {
+        if (req.interceptResolutionState().action === "already-handled") {
+          return
+        }
+
+        if (req.resourceType() === "image") {
+          return req.abort()
+        }
+
+        req.continue()
       })
     }
 

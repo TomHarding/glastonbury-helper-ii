@@ -7,6 +7,8 @@ export class Puppets {
   tabs: Tab[]
   browserProxies: BrowserProxy[]
   url: string
+  enableProxies: boolean
+  disableImages: boolean
   refreshRateInMs: number
   registrationPageInnerText: string
   paused: boolean
@@ -15,23 +17,30 @@ export class Puppets {
 
   constructor(
     url: string,
+    enableProxies: boolean = false,
+    disableImages: boolean = false,
     rateLimitPerMinute: number,
     registrationPageInnerText: string
   ) {
     this.tabs = []
     this.url = url
+    this.enableProxies = enableProxies
+    this.disableImages = disableImages
     this.refreshRateInMs = (60 / rateLimitPerMinute) * 1000
     this.registrationPageInnerText = registrationPageInnerText
     this.paused = false
     this.similarityThreshold = 80
     this.lastHighScorer = -1
-    this.browserProxies = ProxyConfig()
+
+    if (this.enableProxies) {
+      this.browserProxies = ProxyConfig()
+    }
   }
 
   setPaused(paused: boolean) {
     if (paused) {
       Logger.info(
-        "Pausing operation. Tabs wills finish their current page load."
+        "Pausing operation. Tabs will finish their current page load."
       )
     } else {
       Logger.info("Resuming operation.")
@@ -48,10 +57,13 @@ export class Puppets {
     this.tabs = []
 
     for (let i = 0; i < tabQuantity; i++) {
-      const tab =
-        i === 0
-          ? new Tab(this.url)
-          : new Tab(this.url, this.browserProxies[i - 1])
+      let tab: Tab
+
+      if (this.enableProxies && i > 0) {
+        tab = new Tab(this.url, this.disableImages, this.browserProxies[i - 1])
+      } else {
+        tab = new Tab(this.url, this.disableImages)
+      }
 
       await tab.initialiseTab()
       this.tabs.push(tab)
@@ -60,7 +72,7 @@ export class Puppets {
 
   async restartTab(tabIndex: number) {
     await this.tabs[tabIndex].close()
-    this.tabs[tabIndex] = new Tab(this.url)
+    this.tabs[tabIndex] = new Tab(this.url, this.disableImages)
     await this.tabs[tabIndex].initialiseTab()
   }
 
