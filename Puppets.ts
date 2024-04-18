@@ -59,8 +59,8 @@ export class Puppets {
     for (let i = 0; i < tabQuantity; i++) {
       let tab: Tab
 
-      if (this.enableProxies && i > 0) {
-        tab = new Tab(this.url, this.disableImages, this.browserProxies[i - 1])
+      if (this.enableProxies) {
+        tab = new Tab(this.url, this.disableImages, this.browserProxies[i])
       } else {
         tab = new Tab(this.url, this.disableImages)
       }
