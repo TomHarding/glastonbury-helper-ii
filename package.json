@@ -1,10 +1,9 @@
 {
-  "name": "glasto-helper",
+  "name": "glastonbury-helper-ii",
   "version": "1.0.0",
   "description": "Bot to help secure the bag",
   "license": "MIT",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write .",
     "lint": "eslint --no-error-on-unmatched-pattern --ext .js,.ts .",
     "typecheck": "tsc --noEmit"

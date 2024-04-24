@@ -31,11 +31,7 @@ const readFileAsString = async (filePath: string) => {
 }
 
 const getRegistrationPageInnerText = async () => {
-  if (argv.test && argv.test !== "false") {
-    return await readFileAsString("resources/test.txt")
-  } else {
-    return await readFileAsString("resources/live.txt")
-  }
+  return await readFileAsString("resources/live.txt")
 }
 
 const setupKeyPressHandler = (tabs: Puppets) => {
