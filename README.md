@@ -1,14 +1,5 @@
 # Glastonbury Helper II
 
-You can enable proxies by using the `--enable-proxies` command and adding your VPNs to the `ProxyConfig` function.
-
-Formatting, linting and type checking is done with Prettier, ESLint and TSC respectively. These can ran with the following commands:
-
-```
-yarn format
-yarn lint
-yarn typecheck
-```
 ---
 
 ## Usage
@@ -26,9 +17,9 @@ You can pause by pressing the enter key on the command line. It should automatic
 
 `--disable-images` : Disables image loading on all the tabs - _should_ speed up page loading.
 
-`--enable-proxies` : Enables proxies to be run against all tabs.
+`--enable-proxies` : Enables proxies to be run against all tabs. Make sure to add your proxies to the `ProxyConfig` function.
 
-## To run
+## To Run
 
 ```
 yarn
@@ -39,3 +30,17 @@ Example run command:
 ```
 tsc main.ts && node main.js --site="https://glastonbury.seetickets.com" --rate-limit=55 --max-tabs=15 --disable-images=true
 ```
+
+## Code Quality
+
+Formatting, linting and type checking is done with Prettier, ESLint and TSC respectively. These can ran with the following commands:
+
+```
+yarn format
+yarn lint
+yarn typecheck
+```
+
+## To Do
+
+- [ ] Implement a way to make tabs fingerprint uniquely.

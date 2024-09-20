@@ -1,18 +1,17 @@
-const puppeteer = require("puppeteer")
-const puppeteerExtra = require("puppeteer-extra")
-const pluginStealth = require("puppeteer-extra-plugin-stealth")
-
+import { Browser, Page } from "playwright"
+import { chromium } from "playwright-extra"
 import { BrowserProxy } from "./BrowserProxy"
 import { Logger } from "./Logger"
 
-puppeteerExtra.use(pluginStealth())
+const stealth = require("puppeteer-extra-plugin-stealth")()
+chromium.use(stealth)
 
 export class Tab {
   url: string
   disableImages: boolean
   browserProxy: BrowserProxy | null
-  browser: typeof puppeteer.Browser
-  page: typeof puppeteer.Page
+  browser: Browser
+  page: Page
   similarityScore: number
   ready: boolean
   startTime: number
@@ -75,20 +74,20 @@ export class Tab {
       )
     }
 
-    this.browser = await puppeteerExtra.launch({
+    this.browser = await chromium.launch({
       headless: false,
       args: args,
     })
 
-    const pages = await this.browser.pages()
-
-    this.page = pages.pop()
+    const context = await this.browser.newContext()
+    const pages = await context.pages()
+    this.page = pages.length ? pages[0] : await context.newPage() // Create new page if no pages are open
     this.ready = true
   }
 
   async close() {
-    await this.browser.close()
-    return await this.page.close()
+    await this.page.close()
+    return await this.browser.close()
   }
 
   async loadPage() {
@@ -98,42 +97,40 @@ export class Tab {
     Logger.info("Navigating to page")
 
     if (this.browserProxy) {
-      await this.page.authenticate({
+      await this.page.context().setHTTPCredentials({
         username: this.browserProxy.username,
         password: this.browserProxy.password,
       })
     }
 
     if (this.disableImages) {
-      await this.page.setRequestInterception(true)
-
-      this.page.on("request", (req) => {
-        if (req.interceptResolutionState().action === "already-handled") {
-          return
+      await this.page.route("**/*", (route) => {
+        const request = route.request()
+        if (request.resourceType() === "image") {
+          route.abort()
+        } else {
+          route.continue()
         }
-
-        if (req.resourceType() === "image") {
-          return req.abort()
-        }
-
-        req.continue()
       })
     }
 
     return await this.page.goto(this.url, {
-      waitUntil: "networkidle2",
+      waitUntil: "networkidle",
       timeout: 30000,
     })
   }
 
   async getInnerHtmlTextOfAllElements() {
     let innerHtmlTextOfAllElements = ""
-    const options = await this.page.$$("body *")
+    const elements = await this.page.$$("body *")
 
-    for (const option of options) {
-      const label = await this.page.evaluate((el) => el.innerText, option)
+    for (const element of elements) {
+      const label = await this.page.evaluate(
+        (el) => (el as HTMLElement).innerText,
+        element
+      )
 
-      if (label !== undefined && label.length > 0) {
+      if (label && label.length > 0) {
         innerHtmlTextOfAllElements += label.trim() + " "
       }
     }
