@@ -13,6 +13,7 @@
     "playwright": "^1.48.0",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "user-agents": "^1.1.328",
     "winston": "^3.15.0",
     "yargs": "^17.2.2"
   },
