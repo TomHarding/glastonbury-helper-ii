@@ -80,13 +80,22 @@ export class Tab {
       args: args,
     })
 
-    const context = await this.browser.newContext({
+    const contextOptions: any = {
       viewport: {
         width: Math.floor(Math.random() * (1920 - 800 + 1)) + 800,
         height: Math.floor(Math.random() * (1080 - 600 + 1)) + 600,
       }
-    })
-    const pages = await context.pages()
+    }
+
+    if (this.browserProxy) {
+      contextOptions.httpCredentials = {
+        username: this.browserProxy.username,
+        password: this.browserProxy.password,
+      }
+    }
+
+    const context = await this.browser.newContext(contextOptions)
+    const pages = context.pages()
     this.page = pages.length ? pages[0] : await context.newPage() // Create new page if no pages are open
     this.ready = true
   }
@@ -101,13 +110,6 @@ export class Tab {
     this.setReady(false)
 
     Logger.info("Navigating to page")
-
-    if (this.browserProxy) {
-      await this.page.context().setHTTPCredentials({
-        username: this.browserProxy.username,
-        password: this.browserProxy.password,
-      })
-    }
 
     if (this.disableImages) {
       await this.page.route("**/*", (route) => {
