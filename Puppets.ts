@@ -123,7 +123,6 @@ export class Puppets {
   }
 
   async loadPagesAtRate() {
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       for (let i = 0; i < this.tabs.length; i++) {
         while (this.paused === true) {
