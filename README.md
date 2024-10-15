@@ -21,8 +21,10 @@ You can pause by pressing the enter key on the command line. It should automatic
 
 ## To Run
 
+Install the dependencies with:
+
 ```
-yarn
+yarn install
 ```
 
 Example run command:

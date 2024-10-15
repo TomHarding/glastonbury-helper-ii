@@ -3,6 +3,7 @@ import { chromium } from "playwright-extra"
 import { BrowserProxy } from "./BrowserProxy"
 import { Logger } from "./Logger"
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const stealth = require("puppeteer-extra-plugin-stealth")()
 chromium.use(stealth)
 
