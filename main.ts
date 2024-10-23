@@ -36,6 +36,7 @@ const getRegistrationPageInnerText = async () => {
 const setupKeyPressHandler = (tabs: Puppets) => {
   emitKeypressEvents(process.stdin)
   process.stdin.setRawMode(true)
+  process.stdin.resume()
 
   process.stdin.on("keypress", (str, key) => {
     if (key.ctrl && key.name === "c") {
@@ -46,7 +47,7 @@ const setupKeyPressHandler = (tabs: Puppets) => {
           Logger.error(`Error closing tabs: ${error.message}`)
           process.exit(1)
         })
-    } else if (key.name === "enter") {
+    } else if (key.name === "return") {
       tabs.setPaused(!tabs.getPaused())
     }
   })

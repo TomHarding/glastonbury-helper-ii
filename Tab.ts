@@ -3,7 +3,7 @@ import { chromium } from "playwright-extra"
 import * as UserAgent from "user-agents"
 import { BrowserProxy } from "./BrowserProxy"
 import { GEOLOCATIONS, LANGUAGES, TIMEZONES } from "./consts"
-import { randomArrayItem} from "./helpers"
+import { randomArrayItem } from "./helpers"
 import { Logger } from "./Logger"
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
