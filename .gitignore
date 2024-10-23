@@ -6,6 +6,8 @@ yarn-error.log*
 
 # Complied JS
 /BrowserProxy.js
+/consts.js
+/helpers.js
 /Logger.js
 /main.js
 /ProxyConfig.js
