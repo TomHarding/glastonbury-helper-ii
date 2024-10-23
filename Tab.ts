@@ -2,32 +2,13 @@ import { Browser, BrowserContextOptions, Page } from "playwright"
 import { chromium } from "playwright-extra"
 import * as UserAgent from "user-agents"
 import { BrowserProxy } from "./BrowserProxy"
+import { GEOLOCATIONS, LANGUAGES, TIMEZONES } from "./consts"
+import { randomArrayItem} from "./helpers"
 import { Logger } from "./Logger"
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const stealth = require("puppeteer-extra-plugin-stealth")()
 chromium.use(stealth)
-
-const timezones = [
-  "America/New_York",
-  "Europe/London",
-  "Asia/Tokyo",
-  // Add more timezones as needed
-]
-
-const languages = [
-  "en-US",
-  "en-GB",
-  "ja-JP",
-  // Add more languages as needed
-]
-
-const geolocations = [
-  { latitude: 40.7128, longitude: -74.006 }, // New York
-  { latitude: 51.5074, longitude: -0.1278 }, // London
-  { latitude: 35.6895, longitude: 139.6917 }, // Tokyo
-  // Add more geolocations as needed
-]
 
 export class Tab {
   url: string
@@ -102,16 +83,15 @@ export class Tab {
       args: args,
     })
 
-    const userAgent = new UserAgent().toString()
-
     const contextOptions: BrowserContextOptions = {
+      geolocation: randomArrayItem(GEOLOCATIONS),
+      locale: randomArrayItem(LANGUAGES),
+      timezoneId: randomArrayItem(TIMEZONES),
+      userAgent: new UserAgent().toString(),
       viewport: {
         width: Math.floor(Math.random() * (1920 - 800 + 1)) + 800,
         height: Math.floor(Math.random() * (1080 - 600 + 1)) + 600,
       },
-      userAgent,
-      timezoneId: timezones[Math.floor(Math.random() * timezones.length)],
-      locale: languages[Math.floor(Math.random() * languages.length)],
     }
 
     Logger.info(contextOptions)
