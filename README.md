@@ -3,7 +3,7 @@
 ---
 
 ## Usage
-This app launches Chrome via Puppeteer. It opens a number of browsers set by the user. It will then iterate through each browser and load the set URL in a tab. It will only begin loading the page on the next browser tab when a certain amount of time has passed so it does not surpass the set rate limit (60 a minute on the Glastonbury site). 
+This app launches Chrome via Playwright. It opens a number of browsers set by the user. It will then iterate through each browser and load the set URL in a tab. It will only begin loading the page on the next browser tab when a certain amount of time has passed so it does not surpass the set rate limit (60 a minute on the Glastonbury site). 
 
 After each page has loads it calculates a similarity rating by comparing the text on the loaded page to the text in `resources/live.txt`. It is using the inner text of all elements within the body of the returned page. The browser will then automatically switch to the tab with the highest similarity rating. This tab will not be reloaded until another tab beats its similarity rating.
 
@@ -42,7 +42,3 @@ yarn format
 yarn lint
 yarn typecheck
 ```
-
-## To Do
-
-- [ ] Implement a way to make tabs fingerprint uniquely.
