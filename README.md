@@ -1,7 +1,5 @@
 # Glastonbury Helper II
 
----
-
 ## Usage
 This app launches Chrome via Playwright. It opens a number of browsers set by the user. It will then iterate through each browser and load the set URL in a tab. It will only begin loading the page on the next browser tab when a certain amount of time has passed so it does not surpass the set rate limit (60 a minute on the Glastonbury site). 
 
@@ -9,7 +7,7 @@ After each page has loads it calculates a similarity rating by comparing the tex
 
 You can pause by pressing the enter key on the command line. It should automatically stop when the registration page loads.
 
-`--site` : URL.
+`--site` : URL to poll, this should be to the event page, i.e. `https://glastonbury.seetickets.com/event/glastonbury-2024/worthy-farm/3500000`.
 
 `--rate-limit` : Rate limit per minute.
 
