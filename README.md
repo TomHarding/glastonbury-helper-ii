@@ -1,7 +1,5 @@
 # Glastonbury Helper II
 
----
-
 *Note: This will not work with the new queuing system*
 
 ## Usage
