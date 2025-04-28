@@ -2,6 +2,8 @@
 
 ---
 
+*Note: This will not work with the new queuing system*
+
 ## Usage
 This app launches Chrome via Playwright. It opens a number of browsers set by the user. It will then iterate through each browser and load the set URL in a tab. It will only begin loading the page on the next browser tab when a certain amount of time has passed so it does not surpass the set rate limit (60 a minute on the Glastonbury site). 
 
